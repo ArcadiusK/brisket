@@ -1,6 +1,8 @@
 "use strict";
 
+var Environment = require("lib/environment/Environment");
 var Layout = require("lib/viewing/Layout");
+var $ = require("lib/application/jquery");
 
 describe("Layout", function() {
 
@@ -144,6 +146,258 @@ describe("Layout", function() {
 
             it("returns false", function() {
                 expect(layout.isSameTypeAs(Layout2)).toBe(false);
+            });
+
+        });
+
+    });
+
+    describe("#setExtraRenderInstructions", function() {
+
+        beforeEach(function() {
+            spyOn(layout, "executeExtraRenderInstructions");
+            onRender = jasmine.createSpy();
+        });
+
+        describe("handling invalid onRender", function() {
+
+            it("sets extraRenderInstructions to be null when onRender is not a function", function() {
+                onRender = null;
+                layout.setExtraRenderInstructions(onRender);
+                expect(layout.extraRenderInstructions).toBeNull();
+            });
+
+        });
+
+        describe("when layout has been rendered", function() {
+
+            beforeEach(function() {
+                layout.hasBeenRendered = true;
+                layout.setExtraRenderInstructions(onRender);
+            });
+
+            it("calls executeExtraRenderInstructions", function() {
+                expect(layout.executeExtraRenderInstructions).toHaveBeenCalled();
+            });
+
+        });
+
+        describe("when layout has NOT been rendered", function() {
+
+            beforeEach(function() {
+                layout.hasBeenRendered = false;
+                layout.setExtraRenderInstructions(onRender);
+            });
+
+            it("does NOT call executeExtraRenderInstructions", function() {
+                expect(layout.executeExtraRenderInstructions).not.toHaveBeenCalled();
+            });
+
+        });
+
+    });
+
+    describe("#executeExtraRenderInstructions", function() {
+
+        describe("when layout has extra render instructions", function() {
+
+            beforeEach(function() {
+                layout.extraRenderInstructions = jasmine.createSpy();
+                layout.executeExtraRenderInstructions();
+            });
+
+            it("calls the extraRenderInstructions with layout", function() {
+                expect(layout.extraRenderInstructions).toHaveBeenCalledWith(layout);
+            });
+
+        });
+
+        describe("when layout does NOT have extra render instructions", function() {
+
+            beforeEach(function() {
+                layout.extraRenderInstructions = null;
+            });
+
+            it("does not throw an error attempting to call extra render instructions", function() {
+                var executingExtraRenderInstructionsWithoutInstructions = function() {
+                    layout.executeExtraRenderInstructions();
+                };
+
+                expect(executingExtraRenderInstructionsWithoutInstructions).not.toThrow();
+            });
+
+        });
+
+    });
+
+    describe("#renderMetaTags", function() {
+
+        var metatags;
+        var $head;
+
+        beforeEach(function() {
+            layout = new Layout();
+
+            $head = $("<head></head>");
+
+            spyOn(layout, "$head").and.returnValue($head);
+        });
+
+        describe("when there is no metatags", function() {
+
+            beforeEach(function() {
+                metatags = null;
+
+                layout.setMetaTags(metatags);
+                layout.renderMetaTags();
+            });
+
+            it("renders nothing in head", function() {
+                expect($head.html()).toEqual("");
+            });
+
+        });
+
+        describe("when there are standard metatags", function() {
+
+            beforeEach(function() {
+                metatags = new Layout.Metatags({
+                    "description": "some description",
+                    "og:url": "some openGraph url"
+                });
+
+                layout.setMetaTags(metatags);
+                layout.renderMetaTags();
+            });
+
+            it("renders metatags in the head", function() {
+                expect($head.html()).toEqual(
+                    '<meta name="description" content="some description">' +
+                    '<meta property="og:url" content="some openGraph url">'
+                );
+            });
+
+        });
+
+        describe("when there are metatags grouped by openGraph", function() {
+
+            beforeEach(function() {
+                metatags = new Layout.Metatags({
+                    "description": "some description",
+                    "openGraph" : {
+                        "og:image": "some openGraph image"
+                    }
+                });
+
+                layout.setMetaTags(metatags);
+                layout.renderMetaTags();
+            });
+
+            it("renders metatags in the head", function() {
+                expect($head.html()).toEqual(
+                    '<meta name="description" content="some description">' +
+                    '<meta property="og:image" content="some openGraph image">'
+                );
+            });
+
+        });
+
+        describe("when existing metatags are rendered", function() {
+
+            beforeEach(function() {
+                metatags = new Layout.Metatags({
+                    "description": "some description",
+                    "openGraph" : {
+                        "og:image": "some openGraph image"
+                    }
+                });
+
+                layout.setMetaTags(metatags);
+                layout.renderMetaTags();
+
+                var newMetatags = new Layout.Metatags({
+                    "description": "new description",
+                    "twitter:type": "new property",
+                    "openGraph" : {
+                        "og:image": "new image"
+                    }
+                });
+
+                layout.setMetaTags(newMetatags);
+                layout.renderMetaTags();
+            });
+
+            it("updates metatags", function() {
+                expect($head.html()).toEqual(
+                    '<meta name="description" content="new description">' +
+                    '<meta property="og:image" content="new image">' +
+                    '<meta name="twitter:type" content="new property">'
+                );
+            });
+
+        });
+
+    });
+
+    describe("#renderPageLevelData", function() {
+
+        beforeEach(function() {
+            ExampleLayout = Layout.extend();
+
+            layout = new ExampleLayout();
+
+            spyOn(layout, "renderPageTitle");
+            spyOn(layout, "renderMetaTags");
+        });
+
+        it("renders page title", function() {
+            layout.renderPageLevelData();
+            expect(layout.renderPageTitle).toHaveBeenCalled();
+        });
+
+        describe("on server", function() {
+
+            beforeEach(function() {
+                spyOn(Environment, "isServer").and.returnValue(true);
+                layout.renderPageLevelData();
+            });
+
+            it("renders metatags", function() {
+                expect(layout.renderMetaTags).toHaveBeenCalled();
+            });
+
+        });
+
+        describe("on client", function() {
+
+            beforeEach(function() {
+                spyOn(Environment, "isServer").and.returnValue(false);
+            });
+
+            describe("updates metatags on client render", function() {
+
+                beforeEach(function() {
+                    layout.updateMetatagsOnClientRender = true;
+                    layout.renderPageLevelData();
+                });
+
+                it("renders metatags", function() {
+                    expect(layout.renderMetaTags).toHaveBeenCalled();
+                });
+
+            });
+
+            describe("does NOT update metatags on client render", function() {
+
+                beforeEach(function() {
+                    layout.updateMetatagsOnClientRender = false;
+                    layout.renderPageLevelData();
+                });
+
+                it("renders metatags", function() {
+                    expect(layout.renderMetaTags).not.toHaveBeenCalled();
+                });
+
             });
 
         });

@@ -29,6 +29,7 @@ describe("ServerRenderer", function() {
         spyOn(layout, "setContent");
         spyOn(layout, "setTitle");
         spyOn(layout, "setMetaTags");
+        spyOn(layout, "renderPageLevelData");
         spyOn(layout, "setEnvironmentConfig");
         spyOn(layout, "close");
 
@@ -252,6 +253,10 @@ describe("ServerRenderer", function() {
             expect(layout.setMetaTags).toHaveBeenCalledWith(metatags);
         });
 
+        it("attempts to render the page level data", function() {
+            expect(layout.renderPageLevelData).toHaveBeenCalled();
+        });
+
         it("sets the layout content", function() {
             expect(layout.setContent).toHaveBeenCalledWith(view);
         });
@@ -270,6 +275,10 @@ describe("ServerRenderer", function() {
 
         it("sets the layout metatags with null", function() {
             expect(layout.setMetaTags).toHaveBeenCalledWith(null);
+        });
+
+        it("attempts to render the page level data", function() {
+            expect(layout.renderPageLevelData).toHaveBeenCalled();
         });
 
         it("sets the layout content", function() {
