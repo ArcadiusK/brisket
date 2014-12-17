@@ -29,9 +29,8 @@ describe("Metatags", function() {
         beforeEach(function() {
             metatags = new Metatags({
                 "description": "some description",
-                "openGraph": {
-                    "og:url": "http://example.com"
-                }
+                "og:url": "http://example.com",
+                "canonical": "http://example.com/canonical"
             });
         });
 
@@ -75,99 +74,31 @@ describe("Metatags", function() {
 
         });
 
-    });
-
-    describe("#toTags", function() {
-
-        describe("when normal pairs are present", function() {
+        describe("when the tagName matches a canonical-link tag name", function() {
 
             beforeEach(function() {
-                metatags = new Metatags({
-                    "description": "some description"
-                });
+                tagName = "canonical";
             });
 
-            it("creates tags with name attribute", function() {
-                expect(metatags.toTags()).toBe(
-                    '<meta name="description" content="some description">'
+            it("returns the canonical link in html", function() {
+                expect(metatags.toTag(tagName)).toBe(
+                    '<link rel="canonical" href="http://example.com/canonical">'
                 );
             });
 
-        });
-
-        describe("when openGraph pairs are present", function() {
-
-            beforeEach(function() {
-                metatags = new Metatags({
-                    openGraph: {
-                        "og:image": "image.jpg"
-                    }
-                });
-            });
-
-            it("creates tags with property attribute", function() {
-                expect(metatags.toTags()).toBe(
-                    '<meta property="og:image" content="image.jpg">'
-                );
-            });
-
-        });
-
-        describe("when values have characters that could break html", function() {
-
-            beforeEach(function() {
-                metatags = new Metatags({
-                    "key": "/value><"
-                });
-            });
-
-            it("escapes html breaking characters", function() {
-                expect(metatags.toTags()).toBe(
-                    '<meta name="key" content="/value&gt;&lt;">'
-                );
-            });
-
-        });
-
-        describe("when values have single quotes", function() {
-
-            beforeEach(function() {
-                metatags = new Metatags({
-                    "key": "'quote'"
-                });
-            });
-
-            it("escapes single quotes", function() {
-                expect(metatags.toTags()).toBe(
-                    '<meta name="key" content="&#x27;quote&#x27;">'
-                );
-            });
-        });
-
-        describe("when values have double quotes", function() {
-
-            beforeEach(function() {
-                metatags = new Metatags({
-                    "key": '"quote"'
-                });
-            });
-
-            it("escapes double quotes", function() {
-                expect(metatags.toTags()).toBe(
-                    '<meta name="key" content="&quot;quote&quot;">'
-                );
-            });
         });
 
     });
 
     describe("#tagSelector", function() {
 
-        describe("when tagName is standard", function() {
-
+        beforeEach(function() {
             metatags = new Metatags({
                 "key": "value"
             });
+        });
+
+        describe("when tagName is standard", function() {
 
             it("return a standard metatag selector", function() {
                 expect(metatags.tagSelector("description")).toBe(
@@ -182,6 +113,16 @@ describe("Metatags", function() {
             it("return an openGraph metatag selector", function() {
                 expect(metatags.tagSelector("og:url")).toBe(
                     'meta[property="og:url"]'
+                );
+            });
+
+        });
+
+        describe("when tagName is a canonical link tag", function() {
+
+            it("return a canonical link selector", function() {
+                expect(metatags.tagSelector("canonical")).toBe(
+                    'link[rel="canonical"]'
                 );
             });
 

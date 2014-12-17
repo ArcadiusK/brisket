@@ -152,84 +152,6 @@ describe("Layout", function() {
 
     });
 
-    describe("#setExtraRenderInstructions", function() {
-
-        beforeEach(function() {
-            spyOn(layout, "executeExtraRenderInstructions");
-            onRender = jasmine.createSpy();
-        });
-
-        describe("handling invalid onRender", function() {
-
-            it("sets extraRenderInstructions to be null when onRender is not a function", function() {
-                onRender = null;
-                layout.setExtraRenderInstructions(onRender);
-                expect(layout.extraRenderInstructions).toBeNull();
-            });
-
-        });
-
-        describe("when layout has been rendered", function() {
-
-            beforeEach(function() {
-                layout.hasBeenRendered = true;
-                layout.setExtraRenderInstructions(onRender);
-            });
-
-            it("calls executeExtraRenderInstructions", function() {
-                expect(layout.executeExtraRenderInstructions).toHaveBeenCalled();
-            });
-
-        });
-
-        describe("when layout has NOT been rendered", function() {
-
-            beforeEach(function() {
-                layout.hasBeenRendered = false;
-                layout.setExtraRenderInstructions(onRender);
-            });
-
-            it("does NOT call executeExtraRenderInstructions", function() {
-                expect(layout.executeExtraRenderInstructions).not.toHaveBeenCalled();
-            });
-
-        });
-
-    });
-
-    describe("#executeExtraRenderInstructions", function() {
-
-        describe("when layout has extra render instructions", function() {
-
-            beforeEach(function() {
-                layout.extraRenderInstructions = jasmine.createSpy();
-                layout.executeExtraRenderInstructions();
-            });
-
-            it("calls the extraRenderInstructions with layout", function() {
-                expect(layout.extraRenderInstructions).toHaveBeenCalledWith(layout);
-            });
-
-        });
-
-        describe("when layout does NOT have extra render instructions", function() {
-
-            beforeEach(function() {
-                layout.extraRenderInstructions = null;
-            });
-
-            it("does not throw an error attempting to call extra render instructions", function() {
-                var executingExtraRenderInstructionsWithoutInstructions = function() {
-                    layout.executeExtraRenderInstructions();
-                };
-
-                expect(executingExtraRenderInstructionsWithoutInstructions).not.toThrow();
-            });
-
-        });
-
-    });
-
     describe("#renderMetaTags", function() {
 
         var metatags;
@@ -258,7 +180,7 @@ describe("Layout", function() {
 
         });
 
-        describe("when there are standard metatags", function() {
+        describe("when there are metatags", function() {
 
             beforeEach(function() {
                 metatags = new Layout.Metatags({
@@ -279,48 +201,22 @@ describe("Layout", function() {
 
         });
 
-        describe("when there are metatags grouped by openGraph", function() {
-
-            beforeEach(function() {
-                metatags = new Layout.Metatags({
-                    "description": "some description",
-                    "openGraph" : {
-                        "og:image": "some openGraph image"
-                    }
-                });
-
-                layout.setMetaTags(metatags);
-                layout.renderMetaTags();
-            });
-
-            it("renders metatags in the head", function() {
-                expect($head.html()).toEqual(
-                    '<meta name="description" content="some description">' +
-                    '<meta property="og:image" content="some openGraph image">'
-                );
-            });
-
-        });
-
         describe("when existing metatags are rendered", function() {
 
             beforeEach(function() {
                 metatags = new Layout.Metatags({
+                    "canonical": "http://example.com/canonical",
                     "description": "some description",
-                    "openGraph" : {
-                        "og:image": "some openGraph image"
-                    }
+                    "og:image": "some openGraph image"
                 });
 
                 layout.setMetaTags(metatags);
                 layout.renderMetaTags();
 
                 var newMetatags = new Layout.Metatags({
+                    "canonical": "http://example.com/new-canonical",
                     "description": "new description",
-                    "twitter:type": "new property",
-                    "openGraph" : {
-                        "og:image": "new image"
-                    }
+                    "twitter:type": "new property"
                 });
 
                 layout.setMetaTags(newMetatags);
@@ -329,8 +225,9 @@ describe("Layout", function() {
 
             it("updates metatags", function() {
                 expect($head.html()).toEqual(
+                    '<link rel="canonical" href="http://example.com/new-canonical">' +
                     '<meta name="description" content="new description">' +
-                    '<meta property="og:image" content="new image">' +
+                    '<meta property="og:image" content="some openGraph image">' +
                     '<meta name="twitter:type" content="new property">'
                 );
             });
