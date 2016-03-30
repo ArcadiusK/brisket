@@ -108,7 +108,7 @@ describe("Server", function() {
         function appRootWithoutLeadingSlash() {
             return Server.create(validConfigWith({
                 environmentConfig: {
-                    appRoot: "bad"
+                    appRoot: "bad_app_root"
                 }
             }));
         }
